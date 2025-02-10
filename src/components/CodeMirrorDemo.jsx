@@ -3,8 +3,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { evalCode } from "./tool";
 import { andromedaInit } from '@uiw/codemirror-theme-andromeda';
 import { javascript } from '@codemirror/lang-javascript';
-import { html } from '@codemirror/lang-html'
-
+import { html } from '@codemirror/lang-html';
 
 export default class CodeMirrorDemo extends Component {
     state = {
@@ -40,49 +39,53 @@ export default class CodeMirrorDemo extends Component {
     render() {
         const { code, codeComponent, isRunClicked } = this.state;
         return (
-            <div
-                style={{
-                    display: "flex",
-                    height: "100%",
-                    maxHeight: "80vh",
-                    position: "relative"
-                }}
-            >
-                <button
-                    onClick={this.evalCode}
-                    style={{ position: "absolute", right: 10, top: 0, zIndex: 999 }}
-                >
-                    运行
-                </button>
-                <CodeMirror
-                    value={code}
-                    theme={andromedaInit({
-                        settings: {
-                            caret: '#c6c6c6',
-                            fontFamily: 'monospace',
-                            fontSize: '18px',
-                        }
-                    })}
-                    extensions={[javascript({ jsx: true }), html()]}
-                    options={{
-                        mode: "jsx",
-                        // 括号匹配
-                        matchBrackets: true,
-                        // tab缩进
-                        tabSize: 2,
-                    }}
-                    onChange={(value) => {
-                        // 直接使用 value 参数更新 state 中的 code
-                        this.setState({ code: value });
-                    }}
-                />
-                <div style={{ width: "50%", background: "#fff" }}>
-                    {/* 仅在点击运行按钮后渲染 FileTest 组件和 codeComponent 结果 */}
-                    {isRunClicked && (
-                        <>
-                            {codeComponent ? React.createElement(codeComponent) : null}
-                        </>
-                    )}
+            <div style={{ display: "flex", height: "100vh", margin: 0, padding: 0, boxSizing: "border-box" }}>
+                {/* 左侧文件管理模块区域 */}
+                <div style={{ width: "20%", height: "100%", background: "#f0f0f0", padding: 10, boxSizing: "border-box" }}>
+                    {/* 这里可以添加文件管理模块的具体内容 */}
+                    <h3>文件管理</h3>
+                </div>
+                {/* 右侧区域 */}
+                <div style={{ width: "80%" }}>
+                    {/* 代码运行按钮 */}
+                    <div style={{ height: "5vh", padding: 10, textAlign: "right", boxSizing: "border-box" }}>
+                        <button onClick={this.evalCode}>运行</button>
+                    </div>
+                    {/* 代码编辑区 */}
+                    <CodeMirror
+                        value={code}
+                        theme={andromedaInit({
+                            settings: {
+                                caret: '#c6c6c6',
+                                fontFamily: 'monospace',
+                                fontSize: '18px',
+                            }
+                        })}
+                        extensions={[javascript({ jsx: true }), html()]}
+                        options={{
+                            mode: "jsx",
+                            // 括号匹配
+                            matchBrackets: true,
+                            // tab缩进
+                            tabSize: 2,
+                        }}
+                        onChange={(value) => {
+                            // 直接使用 value 参数更新 state 中的 code
+                            this.setState({ code: value });
+                        }}
+                        style={{ flex: 1, boxSizing: "border-box" }}
+                        maxHeight='60vh'
+                        height="60vh"
+                    />
+                    {/* 运行结果展示区域 */}
+                    <div style={{ flex: 1, height: "35vh", maxHeight: '35vh', background: "#fff", boxSizing: "border-box", overflow: "auto" }}>
+                        {/* 仅在点击运行按钮后渲染codeComponent 结果 */}
+                        {isRunClicked && (
+                            <>
+                                {codeComponent ? React.createElement(codeComponent) : null}
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
         );
