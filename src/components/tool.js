@@ -16,11 +16,20 @@ const _require = (moduleName) => {
 };
 
 export const evalCode = (code) => {
-    const output = transform(code, { presets: ["es2015", "react"] }).code;
-    const fn = new Function(
-        `var require = arguments[0], exports = arguments[1];\n ${output}`
-    );
-    const exports = {};
-    fn.call(null, _require, exports);
-    return exports.default;
+    try {
+        const output = transform(code, { presets: ["es2015", "react"] }).code;
+        const wrapperCode = `
+            const module = { exports: {} };
+            const exports = module.exports;
+            var require = arguments[0];
+            ${output}
+            return module.exports;
+        `;
+        const fn = new Function(wrapperCode);
+        const result = fn.call(null, _require);
+        return result.default || result;
+    } catch (error) {
+        console.error("代码执行出错:", error);
+        return null;
+    }
 };
