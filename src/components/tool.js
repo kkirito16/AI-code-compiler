@@ -16,6 +16,8 @@ const _require = (moduleName) => {
 };
 
 export const evalCode = (code) => {
+    let result = null;
+    let error = null;
     try {
         const output = transform(code, { presets: ["es2015", "react"] }).code;
         const wrapperCode = `
@@ -26,10 +28,10 @@ export const evalCode = (code) => {
             return module.exports;
         `;
         const fn = new Function(wrapperCode);
-        const result = fn.call(null, _require);
-        return result.default || result;
-    } catch (error) {
-        console.error("代码执行出错:", error);
-        return null;
+        result = fn.call(null, _require);
+        result = result.default || result;
+    } catch (e) {
+        error = e;
     }
+    return { result, error };
 };

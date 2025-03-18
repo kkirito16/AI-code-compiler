@@ -12,14 +12,17 @@
   "dependencies": {
     "@codemirror/lang-html": "^6.4.9",
     "@codemirror/lang-javascript": "^6.2.2",
+    "@douyinfe/semi-ui": "^2.75.0",
     "@tauri-apps/api": "^2.2.0",
     "@tauri-apps/plugin-fs": "^2.2.0",
     "@tauri-apps/plugin-opener": "^2",
     "@uiw/codemirror-theme-andromeda": "^4.23.8",
     "@uiw/react-codemirror": "^4.23.8",
+    "classnames": "^2.5.1",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-error-boundary": "^5.0.0",
     "react-treebeard": "^3.2.4",
     "styled-components": "^6.1.15"
   },

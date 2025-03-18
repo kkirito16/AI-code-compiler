@@ -45,16 +45,11 @@ fn list_files_and_directories(dir_path: &str) -> Result<FileOrDir, String> {
     list_files_and_directories_internal(dir_path).map_err(|e| e.to_string())
 }
 
-// 原有的 greet 函数
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
 // 注册命令并运行 Tauri 应用
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![list_files_and_directories])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

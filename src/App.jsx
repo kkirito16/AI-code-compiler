@@ -1,9 +1,9 @@
-import CodeMirrorDemo from './components/CodeMirrorDemo.jsx';
+import AICodeEditor from './components/AICodeEditor.jsx';
 
 function App() {
   return (
     <div>
-      <CodeMirrorDemo />
+      <AICodeEditor />
     </div>
   );
 }
