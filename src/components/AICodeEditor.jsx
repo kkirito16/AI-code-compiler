@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Tabs, TabPane, Button } from '@douyinfe/semi-ui';
+import { Tabs, TabPane, Button, Modal, TextArea, Select } from '@douyinfe/semi-ui';
 import CodeMirror from "@uiw/react-codemirror";
 import { evalCode } from "./tool";
 import { andromedaInit } from '@uiw/codemirror-theme-andromeda';
@@ -29,7 +29,11 @@ export default class AICodeEditor extends Component {
         fileTree: null,
         tabList: [],
         activeTabKey: null,
-        terminalInfo: ""
+        terminalInfo: "",
+        response: "",
+        visible: false,
+        inputContent: "",
+        modelName: "DeepSeek-R1",
     };
 
     componentDidMount() {
@@ -51,7 +55,7 @@ export default class AICodeEditor extends Component {
         const fetchFileTree = async () => {
             try {
                 // 调用 Rust 端的 list_files_and_directories 函数
-                const result = await invoke("list_files_and_directories", { dirPath: "D:\\毕设\\AI-code-compiler\\AI-code-compiler\\public" });
+                const result = await invoke("list_files_and_directories", { dirPath: "/Users/kkiritoliu/Desktop/项目/AI-code-compiler/public" });
                 let convertedChildren;
                 if (result && result.children) {
                     convertedChildren = result.children.map(convertToFileTree);
@@ -225,8 +229,43 @@ export default class AICodeEditor extends Component {
         );
     }
 
+    handleSubmit = async (prompt, modelName) => {
+        try {
+            const result = await invoke('call_llm', {
+                prompt: prompt,
+                modelName: modelName
+            });
+            const messageContent = result.choices[0].message.content;
+            this.setState({
+                response: JSON.stringify(messageContent)
+            });
+            console.log(`调用成功: ${messageContent}`);
+        } catch (err) {
+            console.error(`调用失败: ${err}`);
+            this.setState({
+                terminalInfo: `AI 调用失败: ${err}`,
+                errorMessage: err.toString()
+            });
+        }
+    }
+
+    showDialog = () => {
+        this.setState({ visible: true });
+    };
+    handleOk = () => {
+        this.setState({ visible: false });
+        console.log('Ok button clicked');
+    };
+    handleCancel = () => {
+        this.setState({ visible: false });
+        console.log('Cancel button clicked');
+    };
+    handleAfterClose = () => {
+        console.log('After Close callback executed');
+    };
+
     render() {
-        const { code, isRunClicked, fileTree, tabList, activeTabKey, terminalInfo } = this.state;
+        const { code, isRunClicked, fileTree, tabList, activeTabKey, terminalInfo, visible } = this.state;
         const isButtonDisabled = tabList.length === 0;
 
         const renderCodeComponent = () => {
@@ -239,6 +278,52 @@ export default class AICodeEditor extends Component {
             }
             return null;
         };
+
+        const footer = (
+            <div style={{
+                display: 'flex',
+                gap: '5px',
+                alignItems: 'center'
+            }}>
+                <Select
+                    defaultValue="DeepSeek-R1"
+                    onChange={value => this.setState({ modelName: value })}
+                    style={{
+                        width: 150,
+                        borderRadius: '5px'
+                    }}
+                    clickToHide={true}
+                    position="top"
+                >
+                    <Select.Option value="DeepSeek-R1">DeepSeek-R1</Select.Option>
+                    <Select.Option value="gpt-3.5-turbo">gpt-3.5-turbo</Select.Option>
+                    <Select.Option value="gpt-4">gpt-4</Select.Option>
+                    <Select.Option value="gpt-4-turbo">gpt-4-turbo</Select.Option>
+                    <Select.Option value="hunyuan-t1-latest">hunyuan-t1-latest</Select.Option>
+                    <Select.Option value="gemini-1.5-flash-8b">
+                        gemini-1.5-flash-8b
+                    </Select.Option>
+                </Select>
+
+                <TextArea
+                    defaultValue=""
+                    onChange={(value) => this.setState({ inputContent: value })}
+                    autosize={{ minRows: 1, maxRows: 5 }}
+                />
+
+                <Button
+                    style={{
+                        borderRadius: '5px',
+                        color: 'white',
+                    }}
+                    onClick={() => {
+                        this.handleSubmit(this.state.inputContent, this.state.modelName);
+                    }}
+                >
+                    发送
+                </Button>
+            </div>
+        );
 
         return (
             <div style={{ display: "flex", height: "100vh", margin: 0, padding: 0, boxSizing: "border-box" }}>
@@ -254,7 +339,9 @@ export default class AICodeEditor extends Component {
                         style={{ background: "#23262e" }}
                         contentStyle={{ height: "60vh" }}
                         tabBarExtraContent={
-                            <Button onClick={this.evalCode} style={{ color: "white" }} disabled={isButtonDisabled}>运行</Button>
+                            <>
+                                <Button onClick={this.showDialog} style={{ color: "white", marginRight: "10px" }}>AI辅助</Button>
+                                <Button onClick={this.evalCode} style={{ color: "white" }} disabled={isButtonDisabled}>运行</Button></>
                         }
                     >
                         {tabList.map(t => (
@@ -306,6 +393,7 @@ export default class AICodeEditor extends Component {
                         <Tabs
                             style={{ background: "#23262e", width: "100%" }}
                             defaultActiveKey="1"
+                            tabBarStyle={{ paddingLeft: "10px" }}
                         >
                             <TabPane tab="终端" itemKey="1">
                                 <pre style={{ whiteSpace: 'pre-wrap', padding: 10 }}>{this.errorMessage || terminalInfo}</pre>
@@ -334,6 +422,25 @@ export default class AICodeEditor extends Component {
                         </Tabs>
                     </div>
                 </div>
+                <Modal
+                    title="AI辅助"
+                    visible={visible}
+                    onOk={this.handleOk}
+                    afterClose={this.handleAfterClose} //>=1.16.0
+                    onCancel={this.handleCancel}
+                    closeOnEsc={true}
+                    footer={footer}
+                    style={{
+                        width: "80vw",  // 视窗宽度的80%
+                        height: "70vh",  // 视窗高度的70%
+                        maxWidth: 1200,  // 最大宽度
+                        maxHeight: 800   // 最大高度
+                    }}
+                >
+                    This is the content of a basic modal.
+                    <br />
+                    More content...
+                </Modal>
             </div>
         );
     }
