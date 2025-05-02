@@ -21,6 +21,10 @@ const convertToFileTree = (item) => {
 };
 
 export default class AICodeEditor extends Component {
+    constructor(props) {
+        super(props);
+        this.messagesEndRef = React.createRef();
+    }
     state = {
         code: "",
         isRunClicked: false,
@@ -230,6 +234,14 @@ export default class AICodeEditor extends Component {
             </div>
         );
     }
+    scrollToBottom = () => {
+        if (this.messagesEndRef.current) {
+            this.messagesEndRef.current.scrollTo({
+                top: this.messagesEndRef.current.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+    };
 
     handleSubmit = async () => {
         const { inputContent, modelName, messages } = this.state;
@@ -244,7 +256,9 @@ export default class AICodeEditor extends Component {
                 }],
                 inputContent: '',
                 isLoading: true
-            }));
+            }), () => {
+                this.scrollToBottom();
+            });
 
             // 调用 AI 接口
             const result = await invoke('call_llm', {
@@ -260,15 +274,9 @@ export default class AICodeEditor extends Component {
                     time: new Date().toLocaleTimeString()
                 }],
                 isLoading: false
-            }));
-
-            // 自动滚动到底部
-            setTimeout(() => {
-                const container = document.querySelector('.modal-messages-container');
-                if (container) {
-                    container.scrollTop = container.scrollHeight;
-                }
-            }, 50);
+            }), () => {
+                this.scrollToBottom();
+            });
 
         } catch (err) {
             this.setState({
@@ -277,7 +285,9 @@ export default class AICodeEditor extends Component {
                     role: 'system',
                     content: `请求失败: ${err.message}`,
                     time: new Date().toLocaleTimeString()
-                }]
+                }],
+            }, () => {
+                this.scrollToBottom();
             });
         }
     }
@@ -297,7 +307,7 @@ export default class AICodeEditor extends Component {
                 3. 不要包含任何Markdown格式标记
                 4. 使用中文注释
                 代码内容：\n${code}`,
-                modelName: modelName
+                modelName: 'gpt-3.5-turbo'
             });
 
             const annotatedCode = result.choices[0].message.content;
@@ -364,12 +374,21 @@ export default class AICodeEditor extends Component {
                 alignItems: 'center'
             }}>
                 <Select
+                    defaultValue="DeepSeek-R1"
                     style={{ width: 160 }}
                     disabled={this.state.isLoading}
                     value={this.state.modelName}
                     onChange={value => this.setState({ modelName: value })}
+                    position="top"
                 >
-                    {/* 选项保持原有 */}
+                    <Select.Option value="DeepSeek-R1">DeepSeek-R1</Select.Option>
+                    <Select.Option value="gpt-3.5-turbo">gpt-3.5-turbo</Select.Option>
+                    <Select.Option value="gpt-4">gpt-4</Select.Option>
+                    <Select.Option value="gpt-4-turbo">gpt-4-turbo</Select.Option>
+                    <Select.Option value="hunyuan-t1-latest">hunyuan-t1-latest</Select.Option>
+                    <Select.Option value="gemini-1.5-flash-8b">
+                        gemini-1.5-flash-8b
+                    </Select.Option>
                 </Select>
 
                 <div style={{
@@ -383,6 +402,11 @@ export default class AICodeEditor extends Component {
                         onChange={value => this.setState({ inputContent: value })}
                         autosize={{ minRows: 1, maxRows: 4 }}
                         placeholder="输入代码问题..."
+                        onEnterPress={(e) => {
+                            e.preventDefault();
+                            this.handleSubmit();
+                            this.setState({ inputContent: '' });
+                        }}
                         style={{ flex: 1 }}
                     />
                     <Button
@@ -537,11 +561,13 @@ export default class AICodeEditor extends Component {
                         overflow: 'hidden'
                     }}
                 >
-                    <div style={{
-                        flex: 1,
-                        overflowY: 'auto',
-                        padding: 20,
-                    }}>
+                    <div
+                        ref={this.messagesEndRef}
+                        style={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            padding: 20,
+                        }}>
                         {this.state.messages.map((msg, index) => (
                             <div key={index} style={{
                                 display: 'flex',
