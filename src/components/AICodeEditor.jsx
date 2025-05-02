@@ -8,7 +8,6 @@ import { html } from '@codemirror/lang-html';
 import { Treebeard } from "react-treebeard";
 import { invoke } from "@tauri-apps/api/core";
 import { ErrorBoundary } from "react-error-boundary";
-
 const convertToFileTree = (item) => {
     const newItem = {
         name: item.name,
@@ -35,7 +34,8 @@ export default class AICodeEditor extends Component {
         inputContent: "",
         modelName: "DeepSeek-R1",
         messages: [],
-        isLoading: false
+        isLoading: false,
+        isCommentLoading: false
     };
 
     componentDidMount() {
@@ -282,6 +282,49 @@ export default class AICodeEditor extends Component {
         }
     }
 
+    handleComment = async () => {
+        const { code, modelName, activeTabKey, tabList } = this.state;
+        if (!activeTabKey) return;
+
+        try {
+            this.setState({ isCommentLoading: true });
+
+            // 调用 AI 接口生成注释
+            const result = await invoke('call_llm', {
+                prompt: `请为以下代码添加详细注释，要求：
+                1. 保持原有代码结构不变
+                2. 仅返回注释后的代码
+                3. 不要包含任何Markdown格式标记
+                4. 使用中文注释
+                代码内容：\n${code}`,
+                modelName: modelName
+            });
+
+            const annotatedCode = result.choices[0].message.content;
+            const cleanCode = annotatedCode
+                .replace(/```javascript|```jsx?/g, '')
+                .replace(/^\s*[\r\n]/gm, '')
+                .trim();
+
+            const newTabList = tabList.map(tab => {
+                if (tab.itemKey === activeTabKey) {
+                    return { ...tab, text: cleanCode };
+                }
+                return tab;
+            });
+
+            this.setState({
+                code: annotatedCode,
+                tabList: newTabList,
+                isCommentLoading: false
+            });
+
+        } catch (error) {
+            console.error('生成注释失败:', error);
+            this.setState({ isCommentLoading: false });
+        }
+    };
+
     showDialog = () => {
         this.setState({ visible: true });
     };
@@ -373,44 +416,62 @@ export default class AICodeEditor extends Component {
                         contentStyle={{ height: "60vh" }}
                         tabBarExtraContent={
                             <>
+                                <Button
+                                    onClick={this.handleComment}
+                                    disabled={isButtonDisabled}
+                                    loading={this.state.isCommentLoading}
+                                    style={{ color: "white", marginRight: "10px" }}
+                                >
+                                    代码注释
+                                </Button>
                                 <Button onClick={this.showDialog} style={{ color: "white", marginRight: "10px" }}>AI辅助</Button>
                                 <Button onClick={this.evalCode} style={{ color: "white" }} disabled={isButtonDisabled}>运行</Button></>
                         }
                     >
                         {tabList.map(t => (
                             <TabPane closable={t.closable} tab={t.tab} itemKey={t.itemKey} key={t.itemKey}>
-                                <div>
-                                    <CodeMirror
-                                        value={code}
-                                        theme={andromedaInit({
-                                            settings: {
-                                                caret: '#c6c6c6',
-                                                fontFamily: 'monospace',
-                                                fontSize: '18px',
-                                            }
-                                        })}
-                                        extensions={[javascript({ jsx: true }), html()]}
-                                        options={{
-                                            mode: "jsx",
-                                            matchBrackets: true,
-                                            tabSize: 2,
-                                        }}
-                                        onChange={(value) => {
-                                            const newTabList = [...tabList];
-                                            const currentTabIndex = newTabList.findIndex(t => t.itemKey === activeTabKey);
-                                            if (currentTabIndex !== -1) {
-                                                newTabList[currentTabIndex].text = value;
-                                            }
-                                            this.setState({
-                                                code: value,
-                                                tabList: newTabList
-                                            });
-                                        }}
-                                        style={{ flex: 1, boxSizing: "border-box" }}
-                                        maxHeight='60vh'
-                                        height="60vh"
-                                    />
-                                </div>
+                                <Spin
+                                    spinning={this.state.isCommentLoading}
+                                    tip="AI正在生成注释..."
+                                    style={{
+                                        height: '100%',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    <div style={{ height: '60vh' }}>
+                                        <CodeMirror
+                                            value={code}
+                                            theme={andromedaInit({
+                                                settings: {
+                                                    caret: '#c6c6c6',
+                                                    fontFamily: 'monospace',
+                                                    fontSize: '18px',
+                                                }
+                                            })}
+                                            extensions={[javascript({ jsx: true }), html()]}
+                                            options={{
+                                                mode: "jsx",
+                                                matchBrackets: true,
+                                                tabSize: 2,
+                                            }}
+                                            onChange={(value) => {
+                                                const newTabList = [...tabList];
+                                                const currentTabIndex = newTabList.findIndex(t => t.itemKey === activeTabKey);
+                                                if (currentTabIndex !== -1) {
+                                                    newTabList[currentTabIndex].text = value;
+                                                }
+                                                this.setState({
+                                                    code: value,
+                                                    tabList: newTabList
+                                                });
+                                            }}
+                                            style={{ flex: 1, boxSizing: "border-box" }}
+                                            maxHeight='60vh'
+                                            height="60vh"
+                                        />
+                                    </div>
+                                </Spin>
                             </TabPane>
                         ))}
                     </Tabs>
