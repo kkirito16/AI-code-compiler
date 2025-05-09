@@ -1,8 +1,9 @@
-import AICodeEditor from './components/AICodeEditor.jsx';
+import AICodeEditor from './components/AICodeEditor';
+import './styles/App.css';
 
 function App() {
   return (
-    <div>
+    <div className="app">
       <AICodeEditor />
     </div>
   );
