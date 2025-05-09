@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { ErrorBoundary } from "react-error-boundary";
-import { evalCode } from "./tool";
+import { evalCode } from "../utils/codeEvaluator";
 
 const Preview = ({ code, onError, onSuccess }) => {
   const [previewState, setPreviewState] = React.useState({
