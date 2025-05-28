@@ -42,8 +42,9 @@
 
 1. 确保你的系统已安装以下依赖：
    - Node.js (v16 或更高版本)
-   - Rust (最新稳定版)
+   - Rust 
    - Tauri CLI
+请参考Tauri2文档： https://v2.tauri.app/start/create-project/
 
 2. 克隆项目：
    ```bash
@@ -55,9 +56,11 @@
    ```bash
    npm install
    ```
-
-
-4. 启动开发服务器：
+   
+4. 修改API_URL和API_KEY
+   config.rs文件中进行修改
+   
+5. 启动开发服务器：
    ```bash
    npm run tauri dev
    ```
