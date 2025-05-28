@@ -9,8 +9,8 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            api_url: "https://api.zmone.me/v1/chat/completions".to_string(),
-            api_key: "sk-9QHFuVqUIHrQZFo_we-YKX27qpNWhdv04QJ_nSaz7gHCFvsdm7vOQVMD8Mc".to_string(),
+            api_url: "YOUR_API_URL".to_string(),
+            api_key: "YOUR_API_KEY".to_string(),
         }
     }
 } 
